@@ -1,12 +1,14 @@
-from random import sample
-import numpy as np
+# 人工智能导论实验2
+> PE20110007
+> 伍少枫
 
-ATTR_NUM           = 9
-ATTR_VALUE_NUM_MIN = 2
-ATTR_VALUE_NUM_MAX = 12
-POSITIVE = 1
-NEGATIVE = 0
+## 实验概览
+本次实验包含传统机器学习与深度学习两部分。传统机器学习包括决策树和SVM的实现，深度学习部分包括手写感知机模型并进行反向传播以及卷积神经网络的实现。 
 
+## 1 决策树
+### 1.x 整体代码结构
+所有与决策树相关的方法函数都包含在类`DecisionTree`内，下面说明每个方法的作用：
+```python
 class DecisionTree:
     def __init__(self): 
        self.root = TreeNode(None,None) # a dummy root
@@ -17,10 +19,7 @@ class DecisionTree:
         train_features是维度为(训练样本数,属性数)的numpy数组
         train_labels是维度为(训练样本数, )的numpy数组
         '''
-        # no attr has been used
-        available_features = np.arange(0,ATTR_NUM)
-        train_set = np.arange(0,train_labels.size)
-        self.FitRecursive(train_set, train_features, train_labels, available_features, self.root)
+        # ...
 
     def predict(self, test_features):
         '''
@@ -28,36 +27,51 @@ class DecisionTree:
         test_features是维度为(测试样本数,属性数)的numpy数组
         该函数需要返回预测标签，返回一个维度为(测试样本数, )的numpy数组
         '''
-        #print("Predicting test set...")
-        sample_num = np.size(test_features,0)
-        predict_labels = np.zeros(sample_num,dtype=int)
-        #print("Test set size: ",sample_num)
-        i = 0
-        while i<sample_num:
-            #print("Predicting ",i," of ",sample_num," test cases")
-            result = self.PredictRecursive(test_features,i,self.root.children[0])
-            predict_labels[i] = result
-            i = i+1
-        return predict_labels
+        # ...
 
 
-    # PredictRecursive    
+    # PredictRecursive  recursive call for finding the label for a given sample
+    # @ test_target     the index of testing sample in test_set
+    # @ node            current dt node we are at   
     def PredictRecursive(self, test_features, test_target, node):
-        if node.label is not None:
-            return node.label
-        else:
-            value = test_features[test_target][node.attr]
-            #print("Checking ",node.attr,"=",value," attr for ",test_target)
-            #print("Node list size: ",len(node.children))
-            return self.PredictRecursive(test_features, test_target, node.children[value])
+        # ...
 
     # FitRecursive      recursive call for decision tree learning
     # @train_set        numpy array that includes training set indexes
     # @available_features    numpy array that indicates wether an attribute has been used for splitting 
-    # @parent_node      the node that calls this round of recursion(so "parent" node)
-    #                   node that a new best attr should be selected in this round and be added to parent node's children list
+    # @parent_node      the node that calls this round of recursion(so "parent" node)          
     def FitRecursive(self, train_set, train_features, train_labels, available_features, parent_node):
-        # check if recursion should end
+        # ...
+
+    # FindBestAttr      Find the best splitting attribute for current dataset based on information gain
+    def FindBestAttr(self, train_set, train_features, train_labels, available_features):
+        # ...
+    
+    # Helpers for calculating information gain
+    # log               calculate value for log(base)(x)
+    def log(self,base,x):
+        #...
+
+    # IG                calculate information gain when splitting train_set using attribute: attr_id
+    # @ attr_id         id for the splitting attribute
+    # @ train_set       the current training set 
+    def IG(self, attr_id, train_set, train_features, train_labels):
+        # ...
+    # I                 calculate entropy for train_set    
+    def I(self, attr_id, train_set, train_features, train_labels):
+        # ...
+    # Remainder         calculate conditional entropy that use attribute: attr_id to split
+    def Remainder(self, attr_id, train_set, train_features, train_labels): 
+        # ...
+```
+### 1.x 决策树训练算法
+`DecisionTree`类中的`fit`方法用于训练得到决策树，`fit`方法调用`FitRecursive`方法进行递归的训练。`FitRecursive`方法代码如下。该方法可以分为三部分：
+- Part1: 特殊情况检查（递归基础情况检查）：如果所有样本标签相同，那么生成对应标签的叶子节点；如果属性集为空或者所有样本在属性集上的取值完全相同，那么选取有更多样本的标签生成叶子节点。
+- Part2：选取最优划分属性。最优属性的选取由`FindBestAttr`完成，将在下一节进行说明。
+- Part3：使用最优属性进行划分。划分时对于属性某值形成的样本子集，如果为空集，按照训练集更多的标签生成叶子节点；如果不围空集，那么对训练集划分后进行递归调用。
+```python
+def FitRecursive(self, train_set, train_features, train_labels, available_features, parent_node):
+        # Part1: check if recursion should end
         # note that train_set will never be empty since later we will check before recursive call
 
         # all labels same, the label is the result(don't forget to link the node)
@@ -102,11 +116,11 @@ class DecisionTree:
             parent_node.children.append(node)
             return 
 
-        # select best attr
+        # Part2: select best attr
         best_attr,best_index = self.FindBestAttr(train_set,train_features, train_labels,available_features)
 
         
-        # for each value of attr, create a leaf or recursive call
+        # Part3: for each value of attr, create a leaf or recursive call
         attr_count_buckets = np.zeros(ATTR_VALUE_NUM_MAX,dtype=int)
         attr_pcount_buckets = np.zeros(ATTR_VALUE_NUM_MAX,dtype=int)
         attr_ncount_buckets = np.zeros(ATTR_VALUE_NUM_MAX,dtype=int)
@@ -142,11 +156,12 @@ class DecisionTree:
                 self.FitRecursive(split_set, train_features, train_labels, np.delete(available_features,best_index), current_node)
                 
             value = value + 1
+```
 
-        
-
-    # Find the best splitting attribute for current dataset
-    def FindBestAttr(self, train_set, train_features, train_labels, available_features):
+### 1.x 最优属性划分
+最优属性划分由`FindBestAttr`完成，其函数逻辑如下。在寻找最优划分属性时，我们使用信息增益来确定最优属性。信息增益的计算可以参考课件，即熵与条件熵的差值。在`FindBestAttr`中，我们依次对可用的属性计算划分后的信息增益，并选择信息增益最大的属性。另外，要注意的是，`numpy`的`log`函数若自变量为0那么返回`-inf`，该值与0相乘会得到`nan`，因此要对频率为0的情况特殊考虑。
+```python
+def FindBestAttr(self, train_set, train_features, train_labels, available_features):
         # for each available attr, calculate IG. Select the one with highest IG
         if available_features.size == 0:
             return None,None
@@ -163,70 +178,18 @@ class DecisionTree:
                 attr_index_best = i
             i = i + 1
         return attr_id_best,attr_index_best
-    
-    # Helpers for calculating information gain
-    def log(self,base,x):
-        return np.log(x)/np.log(base)
+```
 
-    def IG(self, attr_id, train_set, train_features, train_labels):
-        # calculate entropy
-        ent = self.I(attr_id, train_set, train_features, train_labels)
-        # calculate conditional entropy
-        cent = self.Remainder(attr_id, train_set, train_features, train_labels)
-        ig = ent - cent
-        return ig
-
-    def I(self, attr_id, train_set, train_features, train_labels):
-        #print(train_set)
-        #print(attr_id)
-        pcount = 0
-        ncount = 0
-        for i in train_set:
-            if train_labels[i] == NEGATIVE:
-                ncount = ncount + 1
-            else: 
-                pcount = pcount + 1
-        pfreq = pcount/(pcount+ncount)
-        nfreq = ncount/(pcount+ncount)
-        if pcount == 0:
-            result = - nfreq*self.log(2,nfreq)
-        elif ncount==0:
-            result = - pfreq*self.log(2,pfreq)
-        else:
-            result = -pfreq*self.log(2,pfreq) - nfreq*self.log(2,nfreq)
-        return result
-
-    def Remainder(self, attr_id, train_set, train_features, train_labels):
-        train_buckets_pcount = np.zeros(ATTR_VALUE_NUM_MAX,dtype=int)
-        train_buckets_ncount = np.zeros(ATTR_VALUE_NUM_MAX,dtype=int)
-        # split into groups and calculate
-        for i in train_set:
-            attr_value = train_features[i][attr_id]
-            if train_labels[i] == NEGATIVE:
-                train_buckets_ncount[attr_value] = train_buckets_ncount[attr_value]+1
-            else: 
-                train_buckets_pcount[attr_value] = train_buckets_pcount[attr_value]+1
-        j = 0
-        result = 0
-        while j<ATTR_VALUE_NUM_MAX:
-            total_count = train_buckets_pcount[j]+train_buckets_ncount[j]   
-            if total_count > 0:
-                pfreq = train_buckets_pcount[j]/total_count
-                nfreq = train_buckets_ncount[j]/total_count
-                if pfreq==0:
-                    result = result + (-nfreq*self.log(2,nfreq))*(total_count/train_set.size)
-                elif nfreq==0:
-                    result = result + (-pfreq*self.log(2,pfreq))*(total_count/train_set.size)
-                else:
-                    result = result + (-pfreq*self.log(2,pfreq) - nfreq*self.log(2,nfreq))*(total_count/train_set.size)
-            j = j+1
-        return result
-
-
-
-# treenode: [attr, feat[attr] == 1, feat[attr] == 2, feat[attr] == 3]
+### 1.x 决策树构建
+我们将决策树节点定义为一个类，具体形式如下：
+```python
 class TreeNode:
     def __init__(self, attr, label):
         self.children=[]
         self.attr = attr
         self.label = label
+```
+`children`列表存放子节点，由于在`FitRecursive`中，我们按顺序遍历属性对应的所有值，因此节点也是顺序加入该列表的。`attr`为当前节点对应判断属性的id。`label`为叶子节点对应的标签结果。
+### 1.x 模型预测结果
+使用`dataset/dt/dt_test.data`中的测试数据集对模型预测结果进行评估，模型在测试数据集上的预测准确率为58.93%（如下图）。
+![](./figures/dt.png)
