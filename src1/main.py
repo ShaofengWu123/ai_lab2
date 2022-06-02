@@ -33,8 +33,10 @@ def debug_decisiontree(train_set,train_features,train_labels):
     
 
 if __name__=='__main__':
-    test_decisiontree() 
-    # test_svm(1, 'Linear', 1e-4)
+    #test_decisiontree() 
+    test_svm(1, 'Linear', 1e-4)
+    test_svm(1, 'Gauss', 1e-4)
+    test_svm(1, 'Poly', 1e-4)
 
     # from slides
     # debug_train_features = np.array([[1,0,0,1,1,2,0,1,0],
